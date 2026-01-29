@@ -75,13 +75,13 @@ jobs:
         run: |
           echo "🔐 Checking file permissions..."
           
-          # Check AppleScript permissions (should be 700)
+          # Check AppleScript permissions (should be 600)
           SCRIPT_PERMS=$(stat -f "%OLp" ~/.local/bin/copilot_update_checker.scpt)
           echo "AppleScript permissions: $SCRIPT_PERMS"
-          if [[ "$SCRIPT_PERMS" == "700" ]]; then
-            echo "✅ AppleScript has secure permissions (700)"
+          if [[ "$SCRIPT_PERMS" == "600" ]]; then
+            echo "✅ AppleScript has secure permissions (600)"
           else
-            echo "⚠️ AppleScript permissions are $SCRIPT_PERMS (expected 700)"
+            echo "⚠️ AppleScript permissions are $SCRIPT_PERMS (expected 600)"
           fi
 
       - name: Verify LaunchAgent is loaded

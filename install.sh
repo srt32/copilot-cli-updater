@@ -53,7 +53,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 print_status "Installing secure AppleScript..."
 if [[ -f "$SCRIPT_DIR/copilot_update_checker.scpt" ]]; then
     cp "$SCRIPT_DIR/copilot_update_checker.scpt" ~/.local/bin/
-    chmod 700 ~/.local/bin/copilot_update_checker.scpt
+    chmod 600 ~/.local/bin/copilot_update_checker.scpt
     print_success "Secure AppleScript installed to ~/.local/bin/"
 else
     print_error "copilot_update_checker.scpt not found in $SCRIPT_DIR"
@@ -75,7 +75,8 @@ fi
 print_status "Performing security validation..."
 
 # Validate script syntax using osacompile
-if osacompile -o /dev/null ~/.local/bin/copilot_update_checker.scpt 2>/dev/null; then
+# Use $HOME instead of ~ for proper path expansion
+if osacompile -o /dev/null "$HOME/.local/bin/copilot_update_checker.scpt" 2>/dev/null; then
     print_success "AppleScript syntax validation passed"
 else
     print_error "AppleScript syntax validation failed"
@@ -152,8 +153,8 @@ fi
 
 # Verify file permissions
 print_status "Verifying secure file permissions..."
-if [[ "$(stat -f %A ~/.local/bin/copilot_update_checker.scpt)" == "700" ]]; then
-    print_success "AppleScript permissions: Secure (700)"
+if [[ "$(stat -f %A ~/.local/bin/copilot_update_checker.scpt)" == "600" ]]; then
+    print_success "AppleScript permissions: Secure (600)"
 else
     print_warning "AppleScript permissions may be insecure"
 fi
@@ -170,7 +171,7 @@ echo ""
 echo "🔐 SECURITY IMPROVEMENTS:"
 echo "  ✅ Secure logging directory: ~/Library/Logs/ (permissions: 700)"
 echo "  ✅ Input validation and command injection protection"
-echo "  ✅ Secure file permissions (700/600)"
+echo "  ✅ Secure file permissions (600 for files, 700 for directories)"
 echo "  ✅ Error message sanitization"
 echo "  ✅ Dynamic path resolution (no hardcoded paths)"
 echo ""
