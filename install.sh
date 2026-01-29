@@ -75,8 +75,7 @@ fi
 print_status "Performing security validation..."
 
 # Validate script syntax using osacompile
-# Use $HOME instead of ~ for proper path expansion
-if osacompile -o /dev/null "$HOME/.local/bin/copilot_update_checker.scpt" 2>/dev/null; then
+if osacompile -o /dev/null ~/.local/bin/copilot_update_checker.scpt 2>/dev/null; then
     print_success "AppleScript syntax validation passed"
 else
     print_error "AppleScript syntax validation failed"
