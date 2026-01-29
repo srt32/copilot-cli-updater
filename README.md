@@ -31,22 +31,42 @@ The automation consists of three main components:
 
 ### Workflow
 
-```mermaid
-flowchart TD
-    A[Daily at 9:00 AM] --> B[LaunchAgent triggers]
-    B --> C[AppleScript runs]
-    C --> D{Homebrew installed?}
-    D -->|No| E[Show error notification]
-    D -->|Yes| F{Copilot CLI installed?}
-    F -->|No| G[Show install notification]
-    F -->|Yes| H[Update Homebrew cache]
-    H --> I{Updates available?}
-    I -->|No| J[Show "up to date" notification]
-    I -->|Yes| K[Show "updating" notification]
-    K --> L[Run brew upgrade]
-    L --> M{Update successful?}
-    M -->|Yes| N[Show "success" notification]
-    M -->|No| O[Show "failed" notification]
+```
+┌─────────────────┐
+│ Daily at 9:00 AM│
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│LaunchAgent runs │
+└────────┬────────┘
+         ▼
+┌─────────────────┐     ┌──────────────────┐
+│Homebrew installed?├──No─►│Show error notice │
+└────────┬────────┘     └──────────────────┘
+        Yes
+         ▼
+┌─────────────────┐     ┌──────────────────┐
+│Copilot CLI found?├──No─►│Show install notice│
+└────────┬────────┘     └──────────────────┘
+        Yes
+         ▼
+┌─────────────────┐
+│  brew update    │
+└────────┬────────┘
+         ▼
+┌─────────────────┐     ┌──────────────────┐
+│Updates available?├──No─►│"Up to date" notice│
+└────────┬────────┘     └──────────────────┘
+        Yes
+         ▼
+┌─────────────────┐
+│  brew upgrade   │
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ Show result     │
+│ notification    │
+└─────────────────┘
 ```
 
 ### What Happens Each Morning
