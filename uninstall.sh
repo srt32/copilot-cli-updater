@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Copilot CLI Updater Uninstaller
+# Copilot CLI Updater Uninstaller (SECURITY HARDENED)
 # This script removes the daily Copilot CLI update checker automation
 
 set -e
 
-echo "🗑️  Uninstalling Copilot CLI Update Checker..."
+echo "🗑️  Uninstalling Secure Copilot CLI Update Checker..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -57,20 +57,26 @@ else
     print_warning "AppleScript not found"
 fi
 
-# Remove log files (optional)
-read -p "Do you want to remove log files? (y/N): " -n 1 -r
+# Remove secure log files (optional)
+read -p "Do you want to remove secure log files? (y/N): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    print_status "Removing log files..."
-    rm -f /tmp/copilot-update-checker.log
-    rm -f /tmp/copilot-update-checker.error.log
-    print_success "Log files removed"
+    print_status "Removing secure log files..."
+    rm -f ~/Library/Logs/copilot-update-checker.log
+    rm -f ~/Library/Logs/copilot-update-checker.error.log
+    print_success "Secure log files removed"
 else
-    print_status "Log files preserved at /tmp/copilot-update-checker*.log"
+    print_status "Secure log files preserved at ~/Library/Logs/copilot-update-checker*.log"
 fi
 
+# Clean up any old insecure temp files
+print_status "Cleaning up old insecure temporary files..."
+rm -f /tmp/copilot-update-checker.log
+rm -f /tmp/copilot-update-checker.error.log
+print_success "Insecure temporary files cleaned up"
+
 echo ""
-print_success "Uninstallation completed!"
+print_success "🔐 Secure uninstallation completed!"
 echo ""
 echo "ℹ️  Note: Copilot CLI itself was not removed. To remove it:"
 echo "   brew uninstall --cask copilot-cli"

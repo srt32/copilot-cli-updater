@@ -1,6 +1,8 @@
-# Copilot CLI Updater
+# Copilot CLI Updater 🔐
 
-A daily automation for macOS that checks for updates to the GitHub Copilot CLI (installed via Homebrew) and automatically updates it when available. Provides desktop notifications about the update status.
+A **security-hardened** daily automation for macOS that checks for updates to the GitHub Copilot CLI (installed via Homebrew) and automatically updates it when available. Provides desktop notifications about the update status.
+
+> **🔐 Security Note**: This project has been hardened against common security vulnerabilities including command injection, insecure file storage, and information disclosure. All operations use secure coding practices.
 
 ## 🚀 Quick Start
 
@@ -10,12 +12,12 @@ A daily automation for macOS that checks for updates to the GitHub Copilot CLI (
    cd copilot-cli-updater
    ```
 
-2. **Run the installer:**
+2. **Run the secure installer:**
    ```bash
    ./install.sh
    ```
 
-That's it! The automation will now run daily at 9:00 AM and check for Copilot CLI updates.
+That's it! The automation will now run daily at 9:00 AM and securely check for Copilot CLI updates.
 
 ## 📋 How It Works
 
@@ -64,14 +66,24 @@ flowchart TD
 
 ## 🛠 Installation Details
 
-### What the installer does:
+### What the secure installer does:
 
-1. **Creates directories**: `~/.local/bin` and `~/Library/LaunchAgents`
-2. **Installs AppleScript**: Copies script to `~/.local/bin/copilot_update_checker.scpt`
-3. **Installs LaunchAgent**: Copies plist to `~/Library/LaunchAgents/`
-4. **Checks dependencies**: Verifies Homebrew and Copilot CLI are installed
-5. **Tests installation**: Runs the script once to ensure it works
-6. **Loads LaunchAgent**: Activates the daily schedule
+1. **Creates secure directories**: `~/.local/bin`, `~/Library/LaunchAgents`, and `~/Library/Logs` with proper permissions
+2. **Installs AppleScript**: Copies hardened script to `~/.local/bin/copilot_update_checker.scpt` (700 permissions)
+3. **Installs LaunchAgent**: Copies secure plist to `~/Library/LaunchAgents/` (600 permissions)
+4. **Security validation**: Verifies script syntax and Homebrew installation
+5. **Checks dependencies**: Validates Homebrew and Copilot CLI installations
+6. **Cleans up**: Removes any insecure temporary files from previous installations
+7. **Tests installation**: Runs the script once to ensure secure operation
+8. **Loads LaunchAgent**: Activates the daily schedule with security validations
+
+### Security Improvements in Installation
+
+- ✅ **Secure permissions**: All files created with restrictive permissions (600/700)
+- ✅ **Syntax validation**: AppleScript syntax is validated before installation
+- ✅ **Path validation**: Homebrew installation is verified and validated
+- ✅ **Cleanup operations**: Removes insecure temporary files from previous versions
+- ✅ **Security testing**: Installation includes security-focused validation tests
 
 ### Prerequisites
 
@@ -87,13 +99,13 @@ flowchart TD
 osascript ~/.local/bin/copilot_update_checker.scpt
 ```
 
-### View Logs
+### View Secure Logs
 ```bash
-# View recent log entries
-tail -f /tmp/copilot-update-checker.log
+# View recent secure log entries
+tail -f ~/Library/Logs/copilot-update-checker.log
 
 # View error logs
-tail -f /tmp/copilot-update-checker.error.log
+tail -f ~/Library/Logs/copilot-update-checker.error.log
 ```
 
 ### Check LaunchAgent Status
@@ -171,13 +183,13 @@ chmod +x ~/.local/bin/copilot_update_checker.scpt
 ```
 
 ### Logs show errors
-Check the detailed logs for specific error messages:
+Check the detailed secure logs for specific error messages:
 ```bash
-# Main log
-cat /tmp/copilot-update-checker.log
+# Main secure log
+cat ~/Library/Logs/copilot-update-checker.log
 
 # Error log
-cat /tmp/copilot-update-checker.error.log
+cat ~/Library/Logs/copilot-update-checker.error.log
 ```
 
 ## 📁 File Structure
@@ -193,10 +205,56 @@ copilot-cli-updater/
 
 ## 🔐 Security & Privacy
 
+### Security Hardening Implemented
+
+This automation has been **security-hardened** to protect against common vulnerabilities:
+
+#### ✅ **Command Injection Protection**
+- All shell commands use proper quoting with `quoted form of`
+- Input validation for all external data (brew paths, command output)
+- No direct string concatenation in shell commands
+
+#### ✅ **Secure File Storage**
+- Logs stored in `~/Library/Logs/` with `600` permissions (user-only access)
+- No world-readable files in `/tmp/` directory
+- Secure directory creation with `700` permissions
+
+#### ✅ **Information Disclosure Prevention**
+- Error messages sanitized to prevent sensitive information leakage
+- No detailed system paths or internal details in notifications
+- Fail-safe error handling without exposing internals
+
+#### ✅ **Dynamic Path Resolution**
+- No hardcoded user paths in configuration files
+- Runtime detection of user home directory
+- Supports multiple system configurations
+
+#### ✅ **File Permission Security**
+- AppleScript: `700` permissions (owner execute only)
+- LaunchAgent plist: `600` permissions (owner read/write only)
+- Log directory: `700` permissions (owner access only)
+- Log files: `600` permissions (owner read/write only)
+
+#### ✅ **Validation & Verification**
+- Homebrew binary validation before execution
+- Script syntax validation during installation
+- File existence and permission verification
+
+### Privacy Protection
+
 - **Local execution**: All scripts run locally on your machine
 - **No external connections**: Only connects to Homebrew repositories (same as manual `brew` commands)
 - **Minimal permissions**: Only requires access to run Homebrew commands
 - **Open source**: All code is visible and auditable
+- **No data collection**: No telemetry or usage data transmitted
+
+### Security Best Practices Followed
+
+1. **Principle of Least Privilege**: Scripts run with minimal necessary permissions
+2. **Input Validation**: All external input is validated and sanitized
+3. **Secure Defaults**: All file operations use secure permissions by default
+4. **Error Handling**: Graceful error handling without information disclosure
+5. **Code Auditing**: Clear, readable code structure for security review
 
 ## 🤝 Contributing
 

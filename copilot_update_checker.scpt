@@ -1,91 +1,131 @@
--- Copilot CLI Update Checker AppleScript
+-- Copilot CLI Update Checker AppleScript (SECURITY HARDENED)
 -- Checks for updates to copilot-cli via Homebrew and updates if available
 -- Sends notifications with results
 
 on run
-	set logFile to "/tmp/copilot-update-checker.log"
+	-- Use secure logging directory with proper permissions
+	set userHome to (path to home folder as string)
+	set logDir to userHome & "Library:Logs:"
+	set logFile to (logDir & "copilot-update-checker.log") as string
+	
+	-- Ensure log directory exists with secure permissions
+	try
+		do shell script "mkdir -p " & quoted form of (POSIX path of logDir) & " && chmod 700 " & quoted form of (POSIX path of logDir)
+	on error
+		display notification "Failed to create secure log directory" with title "Copilot CLI Updater" subtitle "Security Error"
+		return
+	end try
 	
 	try
 		-- Log start time
-		logMessage("Starting Copilot CLI update check", logFile)
+		secureLogMessage("Starting Copilot CLI update check", logFile)
 		
-		-- Check if Homebrew is installed
-		set brewPath to getBrewPath()
+		-- Check if Homebrew is installed with validation
+		set brewPath to getSecureBrewPath()
 		if brewPath is "" then
-			set errorMsg to "Homebrew not found. Please install Homebrew first."
+			set errorMsg to "Homebrew not found"
 			display notification errorMsg with title "Copilot CLI Updater" subtitle "Error"
-			logMessage("ERROR: " & errorMsg, logFile)
+			secureLogMessage("ERROR: " & errorMsg, logFile)
 			return
 		end if
 		
-		logMessage("Found Homebrew at: " & brewPath, logFile)
+		secureLogMessage("Found Homebrew installation", logFile)
+		
+		-- Validate brew path before use
+		if not isValidBrewPath(brewPath) then
+			set errorMsg to "Invalid Homebrew installation detected"
+			display notification errorMsg with title "Copilot CLI Updater" subtitle "Security Error"
+			secureLogMessage("SECURITY ERROR: Invalid brew path", logFile)
+			return
+		end if
 		
 		-- Check if copilot-cli is installed
-		if not isCopilotInstalled(brewPath) then
-			set errorMsg to "Copilot CLI not found. Install with: brew install --cask copilot-cli"
+		if not isCopilotInstalledSecure(brewPath) then
+			set errorMsg to "Copilot CLI not found"
 			display notification errorMsg with title "Copilot CLI Updater" subtitle "Not Installed"
-			logMessage("ERROR: " & errorMsg, logFile)
+			secureLogMessage("ERROR: " & errorMsg, logFile)
 			return
 		end if
 		
-		logMessage("Copilot CLI is installed", logFile)
+		secureLogMessage("Copilot CLI is installed", logFile)
 		
-		-- Update Homebrew
-		logMessage("Updating Homebrew...", logFile)
-		do shell script brewPath & " update 2>&1"
+		-- Update Homebrew with secure command execution
+		secureLogMessage("Updating Homebrew...", logFile)
+		set updateCmd to quoted form of brewPath & " update"
+		do shell script updateCmd
 		
-		-- Check for copilot-cli updates
-		set updateCheck to do shell script brewPath & " outdated --cask copilot-cli 2>/dev/null || true"
+		-- Check for copilot-cli updates with secure execution
+		set outdatedCmd to quoted form of brewPath & " outdated --cask copilot-cli 2>/dev/null || true"
+		set updateCheck to do shell script outdatedCmd
 		
 		if updateCheck contains "copilot-cli" then
 			-- Update available
-			display notification "Copilot CLI update available! Updating now..." with title "Copilot CLI Updater" subtitle "Updating"
-			logMessage("Update available, updating copilot-cli...", logFile)
+			display notification "Update available! Updating now..." with title "Copilot CLI Updater" subtitle "Updating"
+			secureLogMessage("Update available, updating copilot-cli...", logFile)
 			
 			try
-				do shell script brewPath & " upgrade --cask copilot-cli 2>&1"
-				display notification "Copilot CLI updated successfully!" with title "Copilot CLI Updater" subtitle "Success"
-				logMessage("Successfully updated copilot-cli", logFile)
-			on error updateError
-				set errorMsg to "Failed to update copilot-cli: " & updateError
+				set upgradeCmd to quoted form of brewPath & " upgrade --cask copilot-cli"
+				do shell script upgradeCmd
+				display notification "Updated successfully!" with title "Copilot CLI Updater" subtitle "Success"
+				secureLogMessage("Successfully updated copilot-cli", logFile)
+			on error
+				set errorMsg to "Update failed"
 				display notification errorMsg with title "Copilot CLI Updater" subtitle "Update Failed"
-				logMessage("ERROR: " & errorMsg, logFile)
+				secureLogMessage("ERROR: " & errorMsg, logFile)
 			end try
 		else
 			-- No updates available
 			display notification "Copilot CLI is up to date!" with title "Copilot CLI Updater" subtitle "No Updates"
-			logMessage("Copilot CLI is already up to date", logFile)
+			secureLogMessage("Copilot CLI is already up to date", logFile)
 		end if
 		
-	on error scriptError
-		set errorMsg to "Script error: " & scriptError
-		display notification errorMsg with title "Copilot CLI Updater" subtitle "Script Error"
-		logMessage("ERROR: " & errorMsg, logFile)
+	on error
+		set errorMsg to "Script execution failed"
+		display notification errorMsg with title "Copilot CLI Updater" subtitle "Error"
+		secureLogMessage("ERROR: " & errorMsg, logFile)
 	end try
 end run
 
--- Function to get Homebrew path (supports both Intel and Apple Silicon)
-on getBrewPath()
+-- Function to get Homebrew path with security validation
+on getSecureBrewPath()
 	set brewPaths to {"/opt/homebrew/bin/brew", "/usr/local/bin/brew"}
 	repeat with brewPath in brewPaths
 		try
-			do shell script "test -f " & brewPath
+			-- Validate path exists and is executable
+			do shell script "test -f " & quoted form of brewPath & " && test -x " & quoted form of brewPath
 			return brewPath
 		end try
 	end repeat
 	return ""
-end getBrewPath
+end getSecureBrewPath
 
--- Function to check if copilot-cli is installed
-on isCopilotInstalled(brewPath)
+-- Function to validate brew path for security
+on isValidBrewPath(brewPath)
 	try
-		set caskList to do shell script brewPath & " list --cask 2>/dev/null | grep copilot-cli || true"
+		-- Ensure it's an actual brew binary and not something else
+		set brewVersion to do shell script quoted form of brewPath & " --version 2>/dev/null | head -1"
+		if brewVersion contains "Homebrew" then
+			return true
+		end if
+	on error
+		return false
+	end try
+	return false
+end isValidBrewPath
+
+-- Function to check if copilot-cli is installed (secure version)
+on isCopilotInstalledSecure(brewPath)
+	try
+		-- Use secure command execution with proper quoting
+		set caskListCmd to quoted form of brewPath & " list --cask 2>/dev/null"
+		set caskList to do shell script caskListCmd
 		if caskList contains "copilot-cli" then
 			return true
 		end if
 		
 		-- Also check formula installations
-		set formulaList to do shell script brewPath & " list 2>/dev/null | grep copilot-cli || true"
+		set formulaListCmd to quoted form of brewPath & " list 2>/dev/null"
+		set formulaList to do shell script formulaListCmd
 		if formulaList contains "copilot-cli" then
 			return true
 		end if
@@ -94,13 +134,21 @@ on isCopilotInstalled(brewPath)
 	on error
 		return false
 	end try
-end isCopilotInstalled
+end isCopilotInstalledSecure
 
--- Function to log messages with timestamp
-on logMessage(message, logFile)
-	set timestamp to do shell script "date '+%Y-%m-%d %H:%M:%S'"
-	set logEntry to "[" & timestamp & "] " & message
+-- Function to log messages with timestamp and secure file handling
+on secureLogMessage(message, logFile)
 	try
-		do shell script "echo " & quoted form of logEntry & " >> " & quoted form of logFile
+		set timestamp to do shell script "date '+%Y-%m-%d %H:%M:%S'"
+		set logEntry to "[" & timestamp & "] " & message
+		set logFilePath to quoted form of (POSIX path of logFile)
+		
+		-- Create log file with secure permissions if it doesn't exist
+		do shell script "touch " & logFilePath & " && chmod 600 " & logFilePath
+		
+		-- Append log entry securely
+		do shell script "echo " & quoted form of logEntry & " >> " & logFilePath
+	on error
+		-- Fail silently for logging errors to prevent recursive issues
 	end try
-end logMessage
+end secureLogMessage
