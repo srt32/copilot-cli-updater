@@ -74,8 +74,8 @@ fi
 # Security validation
 print_status "Performing security validation..."
 
-# Validate script syntax
-if osascript -s ~/.local/bin/copilot_update_checker.scpt 2>/dev/null; then
+# Validate script syntax using osacompile
+if osacompile -o /dev/null ~/.local/bin/copilot_update_checker.scpt 2>/dev/null; then
     print_success "AppleScript syntax validation passed"
 else
     print_error "AppleScript syntax validation failed"
