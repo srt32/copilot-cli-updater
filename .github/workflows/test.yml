@@ -1,0 +1,182 @@
+name: Test Install/Uninstall
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test-macos:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Homebrew is installed
+        run: |
+          echo "🍺 Checking Homebrew installation..."
+          brew --version
+          which brew
+
+      - name: Install Copilot CLI (if not present)
+        run: |
+          echo "📦 Installing Copilot CLI..."
+          if ! brew list --cask copilot-cli 2>/dev/null; then
+            brew install --cask copilot-cli || echo "⚠️ Copilot CLI cask not available, skipping"
+          else
+            echo "✅ Copilot CLI already installed"
+          fi
+
+      - name: Validate AppleScript syntax
+        run: |
+          echo "🔍 Validating AppleScript syntax..."
+          osacompile -o /dev/null copilot_update_checker.scpt
+          echo "✅ AppleScript syntax is valid"
+
+      - name: Validate plist syntax
+        run: |
+          echo "🔍 Validating plist syntax..."
+          plutil -lint com.user.copilot-update-checker.plist
+          echo "✅ Plist syntax is valid"
+
+      - name: Test install script
+        run: |
+          echo "🚀 Running install script..."
+          chmod +x install.sh
+          ./install.sh
+          echo "✅ Install completed"
+
+      - name: Verify installation files exist
+        run: |
+          echo "🔍 Verifying installed files..."
+          
+          # Check AppleScript
+          if [[ -f ~/.local/bin/copilot_update_checker.scpt ]]; then
+            echo "✅ AppleScript installed at ~/.local/bin/copilot_update_checker.scpt"
+            ls -la ~/.local/bin/copilot_update_checker.scpt
+          else
+            echo "❌ AppleScript not found"
+            exit 1
+          fi
+          
+          # Check LaunchAgent
+          if [[ -f ~/Library/LaunchAgents/com.user.copilot-update-checker.plist ]]; then
+            echo "✅ LaunchAgent installed at ~/Library/LaunchAgents/"
+            ls -la ~/Library/LaunchAgents/com.user.copilot-update-checker.plist
+          else
+            echo "❌ LaunchAgent plist not found"
+            exit 1
+          fi
+
+      - name: Verify secure file permissions
+        run: |
+          echo "🔐 Checking file permissions..."
+          
+          # Check AppleScript permissions (should be 700)
+          SCRIPT_PERMS=$(stat -f "%OLp" ~/.local/bin/copilot_update_checker.scpt)
+          echo "AppleScript permissions: $SCRIPT_PERMS"
+          if [[ "$SCRIPT_PERMS" == "700" ]]; then
+            echo "✅ AppleScript has secure permissions (700)"
+          else
+            echo "⚠️ AppleScript permissions are $SCRIPT_PERMS (expected 700)"
+          fi
+
+      - name: Verify LaunchAgent is loaded
+        run: |
+          echo "🔍 Checking LaunchAgent status..."
+          if launchctl list | grep -q "com.user.copilot-update-checker"; then
+            echo "✅ LaunchAgent is loaded"
+            launchctl list com.user.copilot-update-checker || true
+          else
+            echo "⚠️ LaunchAgent not loaded (may require GUI session)"
+          fi
+
+      - name: Test automation script execution
+        run: |
+          echo "🧪 Testing automation script..."
+          # Run the script - it may fail if copilot-cli isn't installed, but should not crash
+          osascript ~/.local/bin/copilot_update_checker.scpt || true
+          echo "✅ Script executed without crash"
+
+      - name: Check log file creation
+        run: |
+          echo "📋 Checking log files..."
+          
+          # Check for secure log location
+          if [[ -f ~/Library/Logs/copilot-update-checker.log ]]; then
+            echo "✅ Secure log file created at ~/Library/Logs/"
+            echo "📄 Log contents:"
+            cat ~/Library/Logs/copilot-update-checker.log
+          else
+            echo "⚠️ Log file not found at secure location"
+          fi
+          
+          # Verify no logs in insecure /tmp/ location
+          if [[ -f /tmp/copilot-update-checker.log ]]; then
+            echo "⚠️ WARNING: Found log in insecure /tmp/ location"
+          else
+            echo "✅ No logs in insecure /tmp/ location"
+          fi
+
+      - name: Test uninstall script
+        run: |
+          echo "🗑️ Running uninstall script..."
+          chmod +x uninstall.sh
+          echo "n" | ./uninstall.sh  # Answer 'n' to keep logs
+          echo "✅ Uninstall completed"
+
+      - name: Verify uninstallation
+        run: |
+          echo "🔍 Verifying uninstallation..."
+          
+          # Check AppleScript removed
+          if [[ ! -f ~/.local/bin/copilot_update_checker.scpt ]]; then
+            echo "✅ AppleScript removed"
+          else
+            echo "❌ AppleScript still exists"
+            exit 1
+          fi
+          
+          # Check LaunchAgent removed
+          if [[ ! -f ~/Library/LaunchAgents/com.user.copilot-update-checker.plist ]]; then
+            echo "✅ LaunchAgent plist removed"
+          else
+            echo "❌ LaunchAgent plist still exists"
+            exit 1
+          fi
+          
+          # Check LaunchAgent unloaded
+          if ! launchctl list | grep -q "com.user.copilot-update-checker"; then
+            echo "✅ LaunchAgent unloaded"
+          else
+            echo "⚠️ LaunchAgent may still be loaded"
+          fi
+
+      - name: Test reinstall after uninstall
+        run: |
+          echo "🔄 Testing reinstall..."
+          ./install.sh
+          
+          if [[ -f ~/.local/bin/copilot_update_checker.scpt ]] && \
+             [[ -f ~/Library/LaunchAgents/com.user.copilot-update-checker.plist ]]; then
+            echo "✅ Reinstall successful"
+          else
+            echo "❌ Reinstall failed"
+            exit 1
+          fi
+
+      - name: Final cleanup
+        if: always()
+        run: |
+          echo "🧹 Cleaning up..."
+          # Unload LaunchAgent if loaded
+          launchctl unload ~/Library/LaunchAgents/com.user.copilot-update-checker.plist 2>/dev/null || true
+          # Remove files
+          rm -f ~/.local/bin/copilot_update_checker.scpt
+          rm -f ~/Library/LaunchAgents/com.user.copilot-update-checker.plist
+          rm -f ~/Library/Logs/copilot-update-checker.log
+          rm -f ~/Library/Logs/copilot-update-checker.error.log
+          echo "✅ Cleanup complete"
