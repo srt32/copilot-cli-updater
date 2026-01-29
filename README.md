@@ -89,7 +89,7 @@ The automation consists of three main components:
 ### What the secure installer does:
 
 1. **Creates secure directories**: `~/.local/bin`, `~/Library/LaunchAgents`, and `~/Library/Logs` with proper permissions
-2. **Installs AppleScript**: Copies hardened script to `~/.local/bin/copilot_update_checker.scpt` (700 permissions)
+2. **Installs AppleScript**: Copies hardened script to `~/.local/bin/copilot_update_checker.scpt` (600 permissions)
 3. **Installs LaunchAgent**: Copies secure plist to `~/Library/LaunchAgents/` (600 permissions)
 4. **Security validation**: Verifies script syntax and Homebrew installation
 5. **Checks dependencies**: Validates Homebrew and Copilot CLI installations
@@ -197,9 +197,9 @@ brew list | grep copilot-cli
 ```
 
 ### Permission issues
-If you see permission errors, ensure the AppleScript has execute permissions:
+If you see permission errors, run the installer again to ensure proper permissions are set:
 ```bash
-chmod +x ~/.local/bin/copilot_update_checker.scpt
+./install.sh
 ```
 
 ### Logs show errors
@@ -250,7 +250,7 @@ This automation has been **security-hardened** to protect against common vulnera
 - Supports multiple system configurations
 
 #### ✅ **File Permission Security**
-- AppleScript: `700` permissions (owner execute only)
+- AppleScript: `600` permissions (owner read/write only)
 - LaunchAgent plist: `600` permissions (owner read/write only)
 - Log directory: `700` permissions (owner access only)
 - Log files: `600` permissions (owner read/write only)
