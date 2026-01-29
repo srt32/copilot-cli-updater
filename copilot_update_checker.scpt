@@ -1,5 +1,5 @@
--- Secure Copilot CLI Update Checker with Enhanced Notifications
--- Enhanced version with both notifications and dialog boxes for visibility
+-- Secure Copilot CLI Update Checker with Passive Notifications Only
+-- No clicking required - all notifications are passive and non-intrusive
 
 on run
 	try
@@ -13,14 +13,12 @@ on run
 			do shell script "mkdir -p " & quoted form of POSIX path of logDir
 			do shell script "chmod 700 " & quoted form of POSIX path of logDir
 		on error
-			display dialog "❌ Failed to create secure log directory" buttons {"OK"} default button 1
 			display notification "Failed to create secure log directory" with title "Copilot CLI Updater" subtitle "Security Error"
 			return
 		end try
 		
-		-- Show start notification AND dialog
+		-- Show start notification (passive)
 		display notification "🔍 Starting Copilot CLI update check..." with title "Copilot CLI Updater" subtitle "Checking"
-		display dialog "🔍 Starting Copilot CLI update check..." buttons {"Continue"} default button 1 giving up after 3
 		
 		secureLogMessage("=== Starting Copilot CLI update check ===", logFile)
 		
@@ -28,7 +26,6 @@ on run
 		set brewPath to getSecureBrewPath()
 		if brewPath is "" then
 			set errorMsg to "Homebrew not found or not secure"
-			display dialog "❌ " & errorMsg buttons {"OK"} default button 1
 			display notification errorMsg with title "Copilot CLI Updater" subtitle "Error"
 			secureLogMessage("ERROR: " & errorMsg, logFile)
 			return
@@ -39,7 +36,6 @@ on run
 		-- Validate Homebrew binary for security
 		if not isValidBrewPath(brewPath) then
 			set errorMsg to "Homebrew binary validation failed"
-			display dialog "❌ " & errorMsg buttons {"OK"} default button 1
 			display notification errorMsg with title "Copilot CLI Updater" subtitle "Security Error"
 			secureLogMessage("ERROR: " & errorMsg, logFile)
 			return
@@ -48,7 +44,6 @@ on run
 		-- Check if copilot-cli is installed
 		if not isCopilotInstalledSecure(brewPath) then
 			set errorMsg to "Copilot CLI not installed via Homebrew"
-			display dialog "📦 " & errorMsg & ". Please install first." buttons {"OK"} default button 1
 			display notification errorMsg with title "Copilot CLI Updater" subtitle "Not Installed"
 			secureLogMessage("ERROR: " & errorMsg, logFile)
 			return
@@ -56,9 +51,8 @@ on run
 		
 		secureLogMessage("✅ Copilot CLI is installed", logFile)
 		
-		-- Update Homebrew with progress indication
+		-- Update Homebrew with passive notification
 		display notification "🔄 Updating Homebrew..." with title "Copilot CLI Updater" subtitle "Progress"
-		display dialog "🔄 Updating Homebrew package database..." buttons {"Continue"} default button 1 giving up after 2
 		
 		secureLogMessage("🔄 Updating Homebrew...", logFile)
 		try
@@ -68,9 +62,8 @@ on run
 			secureLogMessage("⚠️ Homebrew update warning: " & updateError, logFile)
 		end try
 		
-		-- Check for updates with proper security validation
+		-- Check for updates with passive notification
 		display notification "🔍 Checking for Copilot updates..." with title "Copilot CLI Updater" subtitle "Scanning"
-		display dialog "🔍 Checking for Copilot CLI updates..." buttons {"Continue"} default button 1 giving up after 2
 		
 		secureLogMessage("🔍 Checking for Copilot CLI updates...", logFile)
 		
@@ -83,33 +76,26 @@ on run
 			if outdatedOutput contains "copilot-cli" then
 				secureLogMessage("📦 Update available for Copilot CLI", logFile)
 				
-				-- Show update notification AND dialog
+				-- Show update notification (passive)
 				display notification "📦 Update available! Updating now..." with title "Copilot CLI Updater" subtitle "Updating"
-				display dialog "📦 Copilot CLI update available! Starting update..." buttons {"Continue"} default button 1 giving up after 3
-				
-				-- Perform the update with progress indication
-				display dialog "⏳ Installing Copilot CLI update..." buttons {"Please Wait"} default button 1 giving up after 2
 				
 				secureLogMessage("🔄 Starting Copilot CLI update...", logFile)
 				set updateCmd to quoted form of brewPath & " upgrade --cask copilot-cli 2>/dev/null"
 				do shell script updateCmd
 				
-				-- Success notifications
+				-- Success notification (passive)
 				set successMsg to "✅ Copilot CLI updated successfully!"
-				display dialog successMsg buttons {"Great!"} default button 1
 				display notification "Updated successfully!" with title "Copilot CLI Updater" subtitle "Success"
 				secureLogMessage("✅ " & successMsg, logFile)
 			else
-				-- No updates needed
+				-- No updates needed (passive)
 				set upToDateMsg to "✅ Copilot CLI is up to date!"
-				display dialog upToDateMsg buttons {"Perfect!"} default button 1
 				display notification "Copilot CLI is up to date!" with title "Copilot CLI Updater" subtitle "No Updates"
 				secureLogMessage("✅ " & upToDateMsg, logFile)
 			end if
 			
 		on error updateError
 			set errorMsg to "Update check failed"
-			display dialog "❌ " & errorMsg buttons {"OK"} default button 1
 			display notification errorMsg with title "Copilot CLI Updater" subtitle "Update Failed"
 			secureLogMessage("ERROR: " & errorMsg & " - " & updateError, logFile)
 		end try
@@ -118,7 +104,6 @@ on run
 		
 	on error
 		set errorMsg to "Script execution failed"
-		display dialog "❌ " & errorMsg buttons {"OK"} default button 1
 		display notification errorMsg with title "Copilot CLI Updater" subtitle "Error"
 		secureLogMessage("ERROR: " & errorMsg, logFile)
 	end try
